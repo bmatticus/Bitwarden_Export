@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Bitwarden CLI Vault Export Script
-# Author: David H (@dh024)
+# Author: 0netx based on David H (@dh024)
 #  
 # This script will backup the following:
 #   - personal vault contents, password encrypted (or unencrypted)
@@ -11,44 +11,182 @@
 # could not be exported.
 
 
-#Set Bitwarden login name (email address)
-user_email="<INSERT YOUR BITWARDEN LOGIN EMAIL HERE>"
-#EXAMPLE:
-#user_email="dh024@domain.com"  
+# Constant and global variables
 
-#Set locations to save export files
-save_folder="<INSERT THE PATH TO YOUR SAVE FOLDER HERE AND END WITH A FORWARD SLASH>"
-#EXAMPLE:
-#save_folder="$HOME/Documents/Bitwarden_Export/"
+params_validated=0
+Yellow='\033[0;33m'       # Yellow
+IYellow='\033[0;93m'      # Yellow
+IGreen='\033[0;92m'       # Green
+Cyan='\033[0;36m'         # Cyan
+UCyan='\033[4;36m'        # Cyan
+UWhite='\033[4;37m'       # White
 
-save_folder_attachments="<INSERT THE PATH TO YOUR SAVE FOLDER HERE AND END WITH A FORWARD SLASH>"
-#EXAMPLE:
-#save_folder_attachments="$HOME/Temp/Attachments/"
+bw status
+echo Starting...
+
+
+#Set Vaultwarden own server.
+# To obtain your organization_id value, open a terminal and type:
+#   bw login #(follow the prompts);
+if [[ -z "${BW_URL_SERVER}" ]]; then
+    echo -e -n $Cyan # set text = yellow
+    echo -e "\nInfo: BW_SERVER enviroment not provided."
+
+    echo -n "If you have your own Bitwarden or Vaulwarden server, set in the environment variable BW_URL_SERVER its url address. "
+    echo -n "Example: https://skynet-vw.server.com"
+else
+	bw_url_server="${BW_URL_SERVER}"
+fi
+
+
+#Set Bitwarden session authentication.
+# To obtain your organization_id value, open a terminal and type:
+#   bw login #(follow the prompts);
+if [[ -z "${BW_CLIENTID}" ]]; then
+
+    echo -e "\n${IYellow}ERROR: BW_CLIENTID enviroment variable not provided, exiting..."
+
+    echo -n "Your Bitwarden Personal API Key can be obtain in:"
+    echo -n "https://bitwarden.com/help/personal-api-key/"
+    params_validated=-1
+else
+    if test -f "${BW_CLIENTID}"; then
+        client_id=$(<${BW_CLIENTID})
+    else
+	    client_id="${BW_CLIENTID}"
+    fi
+
+fi
+
+
+if [[ -z "${BW_CLIENTSECRET}" ]]; then
+
+    echo -e "\n${IYellow}ERROR: BW_CLIENTSECRET enviroment variable not provided, exiting..."
+
+    echo -n "Your Bitwarden Personal API Key can be obtain in:"
+    echo -n "https://bitwarden.com/help/personal-api-key/"
+	params_validated=-1
+else
+    if test -f "${BW_CLIENTSECRET}"; then
+        client_secret=$(<${BW_CLIENTSECRET})
+    else
+	    client_secret="${BW_CLIENTSECRET}"
+    fi
+    
+fi
+
+
+if [[ -z "${BW_PASSWORD}" ]]; then
+
+    echo -e "\n${IYellow}ERROR: BW_PASSWORD enviroment variable not provided, exiting..."
+
+	params_validated=-1
+else
+
+     if test -f "${BW_PASSWORD}"; then
+        bw_password=$(<${BW_PASSWORD})
+    else
+	    bw_password="${BW_PASSWORD}"
+    fi
+fi
+
 
 #Set Organization ID (if applicable)
-org_id="<INSERT YOUR ORGANIZATION_ID HERE>"
-#EXAMPLE:   
-#org_id="cada13d7-5418-37ed-981b-be822121c593"   
-#   To obtain your organization_id value, open a terminal and type:
-#   bw login #(follow the prompts); bw list organizations | jq -r '.[0] | .id'
+if [[ -z "${BW_ORGANIZATIONS_LIST}" ]]; then
+    echo -e "\n${Yellow} BW_ORGANIZATIONS_LIST enviroment not provided. "
+    echo -n "If you want to make a backup of your organizations, set one or more organizations separated by comma"
+    echo -n "To obtain your organization_id value, open a terminal and type:"
+    echo "bw login #(follow the prompts); bw list organizations | jq -r '.[0] | .id'"
+    echo "Example: cada13d7-5418-37ed-981b-be822121c593,cada13d7-5418-37ed-981b-be82219879878979,cada13d7-5418-37ed-981b-be822121c5435"
+else
+	organization_list="${BW_ORGANIZATIONS_LIST}"
+fi
 
 
-echo "Starting export script..."
+#Set locations to save export files
+if [[ -z "${OUTPUT_PATH}" ]]; then\
 
-#Prompt user for their Bitwarden password
-echo -n "Enter your Bitwarden password: "
-read -s bw_password
+    echo -e "\n${IYellow}ERROR: OUTPUT_PATH enviroment not provided."
+
+    echo -n "Provide a OUTPUT_PATH variable ending with slash"
+    echo -n "Example: $HOME/Documents/Bitwarden_Export/"
+	params_validated=-1
+else
+	save_folder="${OUTPUT_PATH}"
+    if [[ ! -d "$save_folder" ]]
+    then
+        echo -e "\n${IYellow}ERROR: Could not find the folder in which to save the files: $save_folder "
+        echo
+        params_validated=-1
+    fi
+fi
+
+#Set locations to save attachment files
+if [[ -z "${ATTACHMENTS_PATH}" ]]; then
+    echo -e -n $Yellow # set text = yellow
+    echo -e "\n${Yellow}Warning: ATTACHMENTS_PATH enviroment not provided. Attachment export will be disabled!!"
+    echo -n "Provide a ATTACHMENTS_PATH variable ending with slash"
+    echo "Example: $HOME/Temp/Attachments/"
+else
+	save_folder_attachments="${ATTACHMENTS_PATH}"
+    if [[ ! -d "$save_folder" ]]
+    then
+        echo -e "\n${IYellow}ERROR: Could not find the folder in which to save the attachments files: $save_folder_attachments "
+        echo
+        params_validated=-1
+    fi
+fi
+
+#Set locations to save attachment files
+if [[ -z "${EXPORT_PASSWORD}" ]]; then
+
+    echo
+    echo -e "\n${IYellow}-------------------------------------------------------------------------------------------------------------"
+    echo -e "\n${IYellow}Warning: EXPORT_PASSWORD enviroment not provided. Exports require a password to securize your exported vault."
+    echo -e "\n${IYellow}-------------------------------------------------------------------------------------------------------------"
+    echo
+    password1=""
+
+else
+    echo -e "\n${Cyan}Info:  Be sure to save your EXPORT_PASSWORD in a safe place!"
+    if test -f "${EXPORT_PASSWORD}"; then
+        password1=$(<${EXPORT_PASSWORD})
+    else
+	    password1="${EXPORT_PASSWORD}"
+    fi
+fi
+
+# Check if required parameters has beed proviced.
+if [[ $params_validated != 0 ]]
+then
+    echo -e "\n${Yellow}one or more required environment variables have not been set."
+    echo -e "${Yellow}Please check the required environment variables:"
+    echo -e "${Yellow}BW_CLIENTID,BW_CLIENTSECRET,BW_PASSWORD,OUTPUT_PATH"
+    exit -1
+fi
+
+echo "Starting exportint..."
 echo 
+
+if [[ $bw_url_server != "" ]]
+then 
+    echo "Setting custom server..."
+    bw config server $bw_url_server
+    echo
+fi
+
+BW_CLIENTID=$client_id
+BW_CLIENTSECRET=$client_secret
 
 #Login user if not already authenticated
 if [[ $(bw status | jq -r .status) == "unauthenticated" ]]
 then 
     echo "Performing login..."
-    bw login $user_email $bw_password --method 0 --quiet
+    bw login --apikey --method 0 
 fi
 if [[ $(bw status | jq -r .status) == "unauthenticated" ]]
 then 
-    echo "ERROR: Failed to authenticate."
+    echo -e "\n${IYellow}ERROR: Failed to authenticate."
     echo
     exit 1
 fi
@@ -59,7 +197,7 @@ session_key=$(bw unlock $bw_password --raw)
 #Verify that unlock succeeded
 if [[ $session_key == "" ]]
 then 
-    echo "ERROR: Failed to authenticate."
+    echo -e "\n${IYellow}ERROR: Failed to authenticate."
     echo
     exit 1
 else
@@ -70,44 +208,18 @@ fi
 #Export the session key as an env variable (needed by BW CLI)
 export BW_SESSION="$session_key" 
 
-
-#Prompt the user for an encryption password
-echo -n "Enter a password to encrypt your vault (or press ENTER for an unencrypted export): "
-read -s password1
 echo
 
 #Check if the user has decided to enter a password or save unencrypted
 if [[ $password1 == "" ]]
 then 
-    echo -e -n "\033[0;33m" # set text = yellow
+
+    echo -e "\n${IYellow}WARNING! Your vault contents will be saved to an unencrypted file."   
     echo "WARNING! Your vault contents will be saved to an unencrypted file."     
-    echo -e -n "\033[0m" # set text = default color
 
-    until [[ $CONTINUE =~ (y|n) ]]
-    do
-        read -rp "Continue? [y/n]: " -e CONTINUE
-    done
 
-    if [[ $CONTINUE == "n" ]]
-    then
-        echo "Exiting script."
-        echo
-        exit 1
-    fi
 else
-    echo -n "Enter the same password for verification: "
-    read -s password2
-    echo
-    
-    if [[ $password1 != $password2 ]]
-    then
-        echo "ERROR: The passwords did not match."
-        echo
-        exit 1
-    else
-        echo "Password verified. Be sure to save your password in a safe place!"
-        echo
-    fi
+    echo -e "\n${Cyan}Info: Password for encrypted export has been provided."   
 fi
 
 
@@ -116,7 +228,7 @@ echo "Performing vault exports..."
 # 1. Export the personal vault 
 if [[ ! -d "$save_folder" ]]
 then
-    echo "ERROR: Could not find the folder in which to save the files."
+    echo -e "\n${IYellow}ERROR: Could not find the folder in which to save the files."
     echo
     exit 1
 fi
@@ -134,18 +246,22 @@ fi
 
 
 # 2. Export the organization vault (if specified) 
-if [[ ! -z "$org_id" ]]
+if [[ ! -z "$organization_list" ]]
 then 
-    if [[ $password1 == "" ]]
-    then
-        echo
-        echo "Exporting organization vault to an unencrypted file..."
-        bw export --organizationid $org_id --format json --output $save_folder
-    else
-        echo 
-        echo "Exporting organization vault to a password-encrypted file..."
-        bw export --organizationid $org_id --format encrypted_json --password $password1 --output $save_folder
-    fi
+    IFS=', ' read -r -a array <<< "$organization_list" 
+    for org_id in "${array[@]}"
+    do
+        if [[ $password1 == "" ]]
+        then
+            echo
+            echo "Exporting organization vault to an unencrypted file..."
+            bw export --organizationid $org_id --format json --output $save_folder
+        else
+            echo 
+            echo "Exporting organization vault to a password-encrypted file..."
+            bw export --organizationid $org_id --format encrypted_json --password $password1 --output $save_folder
+        fi
+    done
 else
     echo
     echo "No organizational vault exists, so nothing to export."
@@ -158,9 +274,7 @@ if [[ $(bw list items | jq -r '.[] | select(.attachments != null)') != "" ]]
 then
     echo
     echo "Saving attachments..."
-    bash <(bw list items | jq -r '.[] 
-    | select(.attachments != null) 
-    | "bw get attachment \"\(.attachments[].fileName)\" --itemid \(.id) --output \"'$save_folder_attachments'\(.name)/\""' )
+    bash <(bw list items | jq -r '.[]  | select(.attachments != null) | "bw get attachment \"\(.attachments[].fileName)\" --itemid \(.id) --output \"'$save_folder_attachments'\(.name)/\""' )
 else
     echo
     echo "No attachments exist, so nothing to export."
@@ -175,12 +289,18 @@ trash_count=$(bw list items --trash | jq -r '. | length')
 
 if [[ $trash_count > 0 ]]
 then
-    echo -e -n "\033[0;33m" # set text = yellow
-    echo "Note: You have $trash_count items in the trash that cannot be exported."
-    echo -e -n "\033[0m" # set text = default color
+
+    echo -e "\n${Cyan}Info: You have $trash_count items in the trash that cannot be exported."
+
 fi
+
 
 
 echo
 bw lock 
+bw logout
+BW_CLIENTID=
+BW_CLIENTSECRET=
+BW_SESSION=
+echo -e "\n${IGreen}Info: Exporting finished."
 echo
