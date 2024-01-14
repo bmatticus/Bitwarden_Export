@@ -46,7 +46,7 @@ Before you use this docker image, please consider the following:
 * note: the docker image will **not** export vault items in your Trash, nor will it export your password history -- this is a limitation of the Bitwarden CLI tools
 * if you spot an issue with the docker image and/or want to suggest a change, feel free to reach out
 
-# How to build image
+# How to run the container 
 
 ## Prerequisites
 
@@ -61,6 +61,17 @@ echo BW_CLIENTSECRET  > ./.secrets/.bwsecret
 echo BW_PASSWORD  > ./.secrets/.bwpassword
 ```
 
+## Configure all required enviroment values
+
+# How to build the image. Developers only
+
+## Clone repo and build docker image
+
+```bash
+git clone https://github.com/0neTX/Bitwarden_Export.git
+cd Bitwarden_Export
+docker build --no-cache -t bw-export --progress=plain .
+```
 
 ### Disclaimer
 
