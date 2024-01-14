@@ -41,3 +41,4 @@ export/
 .vscode/
 .secrets
 docker-compose.prod.yml
+docker-compose.*.yml

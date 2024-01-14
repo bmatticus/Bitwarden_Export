@@ -91,7 +91,7 @@ fi
 
 #Set Organization ID (if applicable)
 if [[ -z "${BW_ORGANIZATIONS_LIST}" ]]; then
-    echo -e "\n${Yellow} BW_ORGANIZATIONS_LIST enviroment not provided. "
+    echo -e "\n${Yellow} BW_ORGANIZATIONS_LIST enviroment not provided. All detected organizations will be exported. "
     echo -n "If you want to make a backup of your organizations, set one or more organizations separated by comma"
     echo -n "To obtain your organization_id value, open a terminal and type:"
     echo "bw login #(follow the prompts); bw list organizations | jq -r '.[0] | .id'"
@@ -242,6 +242,14 @@ else
     bw export --format encrypted_json --password $password1 --output $save_folder
 fi
 
+if [[ $organization_list == "" ]]
+then
+    list=$(bw list organizations | jq -r '.[] | .id' | tr '\n' ', ')
+    if [[ ! -z "$list" ]]
+    then 
+        organization_list=${list::-2}
+    fi
+fi
 
 # 2. Export the organization vault (if specified) 
 if [[ ! -z "$organization_list" ]]
