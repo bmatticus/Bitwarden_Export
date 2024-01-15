@@ -2,7 +2,7 @@ on:
   push:
     branches:
       - main
-name: CD to Docker Hub
+name: CD to Docker Hub Meta tag
 jobs:
   docker:
     runs-on: ubuntu-latest
