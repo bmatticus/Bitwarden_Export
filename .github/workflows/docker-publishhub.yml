@@ -25,6 +25,7 @@ jobs:
         with:
           push: true
           tags: 0netx/bw-export:${{ github.sha }}
+      - uses: actions/checkout@v4
       - name: Docker Hub Description
         uses: peter-evans/dockerhub-description@v3
         with:
