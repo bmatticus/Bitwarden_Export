@@ -247,7 +247,11 @@ then
     list=$(bw list organizations | jq -r '.[] | .id' | tr '\n' ', ')
     if [[ ! -z "$list" ]]
     then 
-        organization_list=${list::-2}
+        organization_list=${list::-1}
+        if [[ ! -z "$organization_list" ]]
+        then 
+                echo -e "\n${Cyan}Info: No  BW_ORGANIZATIONS_LIST provided. Exporting all organizations detected in vault"
+        fi
     fi
 fi
 
