@@ -4,6 +4,10 @@
 
 **[Bitwarden_Export](https://github.com/0neTX/Bitwarden_Export)**: Docker to backup your Bitwarden vault contents
 
+
+[![CD to Docker Hub to Release-Latest](https://github.com/0neTX/Bitwarden_Export/actions/workflows/docker-publishhub-latest.yml/badge.svg?branch=main&event=status)](https://github.com/0neTX/Bitwarden_Export/actions/workflows/docker-publishhub-latest.yml)
+
+
 ## Features
 
 This simple bash docker image uses the Bitwarden CLI to perform three backup tasks:
