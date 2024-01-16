@@ -156,7 +156,7 @@ if [[ $params_validated != 0 ]]
 then
     echo -e "\n${IYellow}One or more required environment variables have not been set."
     echo -e "${IYellow}Please check the required environment variables:"
-    echo -e "${IYellow}BW_CLIENTID,BW_CLIENTSECRET,BW_PASSWORD,OUTPUT_PATH"
+    echo -e "${IYellow}BW_CLIENTID,BW_CLIENTSECRET,BW_PASSWORD"
     exit -1
 fi
 
