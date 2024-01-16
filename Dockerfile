@@ -11,8 +11,10 @@ WORKDIR /app
 
 # Installing last version of Bitwarden CLI
 ADD https://vault.bitwarden.com/download/?app=cli&platform=linux /tmp/bw.zip
-RUN unzip /tmp/bw.zip && chmod +x /app/bw && install /app/bw /usr/local/bin/
 
 # Copy script
 COPY bw_export.sh /app/bw_export.sh 
+# Run multiple tasks
+RUN unzip /tmp/bw.zip && chmod +x /app/bw  && install /app/bw /usr/local/bin/ && chmod +x /app/bw_export.sh
+
 ENTRYPOINT ["/app/bw_export.sh"]
