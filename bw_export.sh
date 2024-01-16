@@ -22,6 +22,35 @@ UWhite='\033[4;37m'       # White
 
 echo Starting ...
 
+#Set locations to save export files
+if [[ -z "${OUTPUT_PATH}" ]]; then
+    echo -e "\n${Cyan}Info: OUTPUT_PATH enviroment not provided. Using default value: /var/data"
+    save_folder="/var/data/"
+else
+	save_folder="${OUTPUT_PATH}"
+    if [[ ! -d "$save_folder" ]]
+    then
+        echo -e "\n${IYellow}ERROR: Could not find the folder in which to save the files: $save_folder "
+        echo
+        params_validated=-1
+    fi
+fi
+
+#Set locations to save attachment files
+if [[ -z "${ATTACHMENTS_PATH}" ]]; then
+    save_folder_attachments="/var/attachments/"    
+    echo -e "\n${Cyan}Info: ATTACHMENTS_PATH enviroment not provided. Using default value: /var/attachments"
+else
+	save_folder_attachments="${ATTACHMENTS_PATH}"
+    if [[ ! -d "$save_folder_attachments" ]]
+    then
+        echo -e "\n${IYellow}ERROR: Could not find the folder in which to save the attachments files: $save_folder_attachments "
+        echo
+        params_validated=-1
+    fi
+fi
+
+
 
 #Set Vaultwarden own server.
 # To obtain your organization_id value, open a terminal and type:
@@ -32,6 +61,7 @@ if [[ -z "${BW_URL_SERVER}" ]]; then
 
     echo -n "If you have your own Bitwarden or Vaulwarden server, set in the environment variable BW_URL_SERVER its url address. "
     echo -n "Example: https://skynet-vw.server.com"
+    echo
 else
 	bw_url_server="${BW_URL_SERVER}"
 fi
@@ -92,7 +122,7 @@ fi
 #Set Organization ID (if applicable)
 if [[ -z "${BW_ORGANIZATIONS_LIST}" ]]; then
     echo -e "\n${Yellow} BW_ORGANIZATIONS_LIST enviroment not provided. All detected organizations will be exported. "
-    echo -n "If you want to make a backup of your organizations, set one or more organizations separated by comma"
+    echo -n "If you want to make a backup of specific organizations, set one or more organizations separated by comma"
     echo -n "To obtain your organization_id value, open a terminal and type:"
     echo "bw login #(follow the prompts); bw list organizations | jq -r '.[0] | .id'"
     echo "Example: cada13d7-5418-37ed-981b-be822121c593,cada13d7-5418-37ed-981b-be82219879878979,cada13d7-5418-37ed-981b-be822121c5435"
@@ -101,41 +131,8 @@ else
 fi
 
 
-#Set locations to save export files
-if [[ -z "${OUTPUT_PATH}" ]]; then\
 
-    echo -e "\n${IYellow}ERROR: OUTPUT_PATH enviroment not provided."
-
-    echo -n "Provide a OUTPUT_PATH variable ending with slash"
-    echo -n "Example: $HOME/Documents/Bitwarden_Export/"
-	params_validated=-1
-else
-	save_folder="${OUTPUT_PATH}"
-    if [[ ! -d "$save_folder" ]]
-    then
-        echo -e "\n${IYellow}ERROR: Could not find the folder in which to save the files: $save_folder "
-        echo
-        params_validated=-1
-    fi
-fi
-
-#Set locations to save attachment files
-if [[ -z "${ATTACHMENTS_PATH}" ]]; then
-    echo -e -n $Yellow # set text = yellow
-    echo -e "\n${Yellow}Warning: ATTACHMENTS_PATH enviroment not provided. Attachment export will be disabled!!"
-    echo -n "Provide a ATTACHMENTS_PATH variable ending with slash"
-    echo "Example: $HOME/Temp/Attachments/"
-else
-	save_folder_attachments="${ATTACHMENTS_PATH}"
-    if [[ ! -d "$save_folder" ]]
-    then
-        echo -e "\n${IYellow}ERROR: Could not find the folder in which to save the attachments files: $save_folder_attachments "
-        echo
-        params_validated=-1
-    fi
-fi
-
-#Set locations to save attachment files
+#Check export password 
 if [[ -z "${EXPORT_PASSWORD}" ]]; then
 
     echo
@@ -157,9 +154,9 @@ fi
 # Check if required parameters has beed proviced.
 if [[ $params_validated != 0 ]]
 then
-    echo -e "\n${Yellow}one or more required environment variables have not been set."
-    echo -e "${Yellow}Please check the required environment variables:"
-    echo -e "${Yellow}BW_CLIENTID,BW_CLIENTSECRET,BW_PASSWORD,OUTPUT_PATH"
+    echo -e "\n${IYellow}One or more required environment variables have not been set."
+    echo -e "${IYellow}Please check the required environment variables:"
+    echo -e "${IYellow}BW_CLIENTID,BW_CLIENTSECRET,BW_PASSWORD"
     exit -1
 fi
 
@@ -226,7 +223,7 @@ echo "Performing vault exports..."
 # 1. Export the personal vault 
 if [[ ! -d "$save_folder" ]]
 then
-    echo -e "\n${IYellow}ERROR: Could not find the folder in which to save the files."
+    echo -e "\n${IYellow}ERROR: Could not find the folder in which to save the files. Path: $save_folder"
     echo
     exit 1
 fi
