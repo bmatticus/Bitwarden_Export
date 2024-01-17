@@ -15,5 +15,6 @@ services:
       # Optional: By default, /var/attachment/
       # - ATTACHMENTS_PATH=<attachment path i.e. /var/attachment/ >
       - EXPORT_PASSWORD=<Export password. Export will be encrypted with this password>
-      - BW_ORGANIZATIONS_LIST=<Organization list id, comma separated>
+      # Optional: If not provided, the service will export all organizations in vault.
+      # - BW_ORGANIZATIONS_LIST=<Organization list id, comma separated>
 
