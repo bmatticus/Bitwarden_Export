@@ -1,4 +1,10 @@
-#!/bin/bash
+#!/usr/bin/env bash
+#  _                                             _   
+# | |____      __      _____  ___ __   ___  _ __| |_ 
+# | '_ \ \ /\ / /____ / _ \ \/ / '_ \ / _ \| '__| __|
+# | |_) \ V  V /_____|  __/>  <| |_) | (_) | |  | |_ 
+# |_.__/ \_/\_/       \___/_/\_\ .__/ \___/|_|   \__|
+#                              |_|                   
 # Bitwarden CLI Vault Export Script
 # Author: 0netx based on David H (@dh024)
 #  
@@ -21,7 +27,6 @@ UCyan='\033[4;36m'        # Cyan
 UWhite='\033[4;37m'       # White
 
 echo Starting ...
-
 #Set locations to save export files
 if [[ -z "${OUTPUT_PATH}" ]]; then
     echo -e "\n${Cyan}Info: OUTPUT_PATH enviroment not provided. Using default value: /var/data"
@@ -121,11 +126,11 @@ fi
 
 #Set Organization ID (if applicable)
 if [[ -z "${BW_ORGANIZATIONS_LIST}" ]]; then
-    echo -e "\n${Yellow} BW_ORGANIZATIONS_LIST enviroment not provided. All detected organizations will be exported. "
-    echo -n "If you want to make a backup of specific organizations, set one or more organizations separated by comma"
-    echo -n "To obtain your organization_id value, open a terminal and type:"
-    echo "bw login #(follow the prompts); bw list organizations | jq -r '.[0] | .id'"
-    echo "Example: cada13d7-5418-37ed-981b-be822121c593,cada13d7-5418-37ed-981b-be82219879878979,cada13d7-5418-37ed-981b-be822121c5435"
+    echo -e "\n${Cyan} BW_ORGANIZATIONS_LIST enviroment not provided. All detected organizations will be exported. "
+    echo -e "${Cyan} If you want to make a backup of specific organizations, set one or more organizations separated by comma"
+    echo -e "${Cyan} To obtain your organization_id value, open a terminal and type:"
+    echo -e "${Cyan}       bw login #(follow the prompts); bw list organizations | jq -r '.[0] | .id'"
+    echo -e "${Cyan}       Example: cada13d7-5418-37ed-981b-be822121c593,cada13d7-5418-37ed-981b-be82219879878979,cada13d7-5418-37ed-981b-be822121c5435"
 else
 	organization_list="${BW_ORGANIZATIONS_LIST}"
 fi
@@ -166,7 +171,7 @@ echo
 if [[ $bw_url_server != "" ]]
 then 
     echo "Setting custom server..."
-    bw config server $bw_url_server
+    bw config server $bw_url_server --quiet --nointeraction
     echo
 fi
 
@@ -177,7 +182,7 @@ BW_CLIENTSECRET=$client_secret
 if [[ $(bw status | jq -r .status) == "unauthenticated" ]]
 then 
     echo "Performing login..."
-    bw login --apikey --method 0 
+    bw login --apikey --method 0   --quiet --nointeraction
 fi
 if [[ $(bw status | jq -r .status) == "unauthenticated" ]]
 then 
@@ -193,26 +198,19 @@ session_key=$(bw unlock $bw_password --raw)
 if [[ $session_key == "" ]]
 then 
     echo -e "\n${IYellow}ERROR: Failed to authenticate."
-    echo
     exit 1
 else
     echo "Login successful."
-    echo
 fi
-
 #Export the session key as an env variable (needed by BW CLI)
 export BW_SESSION="$session_key" 
-
 echo
 
 #Check if the user has decided to enter a password or save unencrypted
 if [[ $password1 == "" ]]
 then 
-
     echo -e "\n${IYellow}WARNING! Your vault contents will be saved to an unencrypted file."   
     echo "WARNING! Your vault contents will be saved to an unencrypted file."     
-
-
 else
     echo -e "\n${Cyan}Info: Password for encrypted export has been provided."   
 fi
@@ -290,7 +288,6 @@ fi
 echo
 echo "Vault export complete."
 
-
 # 4. Report items in the Trash (cannot be exported)
 trash_count=$(bw list items --trash | jq -r '. | length')
 
@@ -300,8 +297,6 @@ then
     echo -e "\n${Cyan}Info: You have $trash_count items in the trash that cannot be exported."
 
 fi
-
-
 
 echo
 bw lock 
