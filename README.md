@@ -55,7 +55,7 @@ The following are created by the docker image:
     services:
     bw-export:
         container_name: bw-export
-        image: bw-export
+        image: 0netx/bw-export:latest
         volumes:
         - ./export:/var
         environment:
@@ -71,6 +71,8 @@ The following are created by the docker image:
         # Optional: Map the container's internal user to a user on the host machine
         # - PUID=1000
         # - PGID=1000
+        # Optional: Execution logging file. Please check output path is mapping inside a volume
+        # - FILE_LOG=/var/data/bw-export-logfile.log        
     ```
 
 * Configure each required variable and volumes.
