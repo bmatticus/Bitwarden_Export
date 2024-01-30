@@ -36,6 +36,7 @@ RUN unzip /tmp/bw.zip && \
     chmod +x /app/bw && \
     install /app/bw /usr/local/bin/ && \
     chmod +x /app/bw_export.sh && \
+    chmod +x /entrypoint.sh && \
     echo "**** create abc user and make our folders ****" && \
     useradd -u 911 -U bitwarden && \
     usermod -G users bitwarden && \
