@@ -1,7 +1,7 @@
 services:
   bw-export:
     container_name: bw-export
-    image: bw-export
+    image: 0netx/bw-export:latest
     volumes:
       - ./export:/var/data
       - ./export:/var/attachment
@@ -18,4 +18,6 @@ services:
       - EXPORT_PASSWORD=<Export password. Export will be encrypted with this password>
       # Optional: If not provided, the service will export all organizations in vault.
       # - BW_ORGANIZATIONS_LIST=<Organization list id, comma separated>
+      # Optional: Execution logging file. Please check output path is mapping inside a volume
+      # - FILE_LOG=/var/data/bw-export-logfile.log      
 
