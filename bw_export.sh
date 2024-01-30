@@ -165,7 +165,7 @@ then
     exit -1
 fi
 
-echo "Starting exportint..."
+echo "Starting exporting..."
 echo 
 
 if [[ $bw_url_server != "" ]]
