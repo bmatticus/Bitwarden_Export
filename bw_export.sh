@@ -25,7 +25,7 @@ IGreen='\033[0;92m'       # Green
 Cyan='\033[0;36m'         # Cyan
 UCyan='\033[4;36m'        # Cyan
 UWhite='\033[4;37m'       # White
-
+Blue='\033[0;34m'     # Blue
 
 echo Starting ...
 #Set locations to save export files
@@ -41,6 +41,7 @@ else
         params_validated=-1
     fi
 fi
+
 
 #Set locations to save attachment files
 if [[ -z "${ATTACHMENTS_PATH}" ]]; then
@@ -166,6 +167,36 @@ then
     exit -1
 fi
 
+if [ -n "${KEEP_LAST_BACKUPS}" ]; then
+    re='^[0-9]+$'
+    if ! [[ ${KEEP_LAST_BACKUPS} =~ $re ]] ; then
+       echo -e "\n$(date '+%F %T') ${IYellow}ERROR: KEEP_LAST_BACKUPS:${KEEP_LAST_BACKUPS} is not a number" >&2; exit 1
+    fi
+    keep_backups="${KEEP_LAST_BACKUPS}"
+    # Deleting vault exportings directories
+    actual_num_backups=$(find $save_folder -path "*-bw-export" -type d | sort | wc -l)
+    if [[ $actual_num_backups -gt $keep_backups ]]; then
+        echo -e "\n$(date '+%F %T') ${Cyan}Info: Nº backups: $actual_num_backups"
+        echo -e "$(date '+%F %T') ${Cyan}Info: Max Nº backups: $keep_backups"
+        for F in $(find $save_folder -path "*-bw-export" -type d | sort | head -$(expr $actual_num_backups - $keep_backups)); do 
+            echo -e "\n$(date '+%F %T') ${Blue} Deleting exported vault:$F"
+            rm -rf $F
+        done
+    fi
+    # Deleteting attachment exporting directories
+    actual_num_backups=$(find $save_folder_attachments -path "*-bw-export" -type d | sort | wc -l)
+    if [[ $actual_num_backups -gt $keep_backups ]]; then
+        echo -e "\n$(date '+%F %T') ${Cyan}Info: Nº backups: $actual_num_backups"
+        echo -e "$(date '+%F %T') ${Cyan}Info: Max Nº backups: $keep_backups"
+        for F in $(find $save_folder_attachments -path "*-bw-export" -type d | sort | head -$(expr $actual_num_backups - $keep_backups)); do 
+            echo -e "\n$(date '+%F %T') ${Blue} Deleting exported attachment:$F"
+            rm -rf $F
+        done
+    fi    
+fi
+
+
+
 echo "$(date '+%F %T') $(date '+%F %T') Starting exporting..."
 echo 
 
@@ -216,7 +247,6 @@ else
     echo -e "\n$(date '+%F %T') ${Cyan}Info: Password for encrypted export has been provided."   
 fi
 
-
 echo "$(date '+%F %T') Performing vault exports..."
 
 # 1. Export the personal vault 
@@ -226,6 +256,24 @@ then
     echo
     exit 1
 fi
+
+working_folder=$(date '+%Y%m%d%H%M%S')-bw-export
+
+save_folder=$save_folder/$working_folder/
+save_folder_attachments=$save_folder_attachments/$working_folder/
+
+if [[ ! -d "$save_folder" ]]
+then
+    mkdir $save_folder
+fi
+
+if [[ ! -d "$save_folder_attachments" ]]
+then
+    mkdir $save_folder_attachments
+fi
+
+
+
 
 if [[ $password1 == "" ]]
 then
