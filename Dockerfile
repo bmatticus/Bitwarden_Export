@@ -35,6 +35,7 @@ COPY root/ /
 RUN unzip /tmp/bw.zip && \
     chmod +x /app/bw && \
     install /app/bw /usr/local/bin/ && \
+    chmod +x /etc/cont-init.d/10-adduser && \
     chmod +x /app/bw_export.sh && \
     chmod +x /entrypoint.sh && \
     echo "**** create abc user and make our folders ****" && \
