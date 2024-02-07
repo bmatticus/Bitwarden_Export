@@ -167,36 +167,6 @@ then
     exit -1
 fi
 
-if [ -n "${KEEP_LAST_BACKUPS}" ]; then
-    re='^[0-9]+$'
-    if ! [[ ${KEEP_LAST_BACKUPS} =~ $re ]] ; then
-       echo -e "\n$(date '+%F %T') ${IYellow}ERROR: KEEP_LAST_BACKUPS:${KEEP_LAST_BACKUPS} is not a number" >&2; exit 1
-    fi
-    keep_backups="${KEEP_LAST_BACKUPS}"
-    # Deleting vault exportings directories
-    actual_num_backups=$(find $save_folder -path "*-bw-export" -type d | sort | wc -l)
-    if [[ $actual_num_backups -gt $keep_backups ]]; then
-        echo -e "\n$(date '+%F %T') ${Cyan}Info: Nº backups: $actual_num_backups"
-        echo -e "$(date '+%F %T') ${Cyan}Info: Max Nº backups: $keep_backups"
-        for F in $(find $save_folder -path "*-bw-export" -type d | sort | head -$(expr $actual_num_backups - $keep_backups)); do 
-            echo -e "\n$(date '+%F %T') ${Blue} Deleting exported vault:$F"
-            rm -rf $F
-        done
-    fi
-    # Deleteting attachment exporting directories
-    actual_num_backups=$(find $save_folder_attachments -path "*-bw-export" -type d | sort | wc -l)
-    if [[ $actual_num_backups -gt $keep_backups ]]; then
-        echo -e "\n$(date '+%F %T') ${Cyan}Info: Nº backups: $actual_num_backups"
-        echo -e "$(date '+%F %T') ${Cyan}Info: Max Nº backups: $keep_backups"
-        for F in $(find $save_folder_attachments -path "*-bw-export" -type d | sort | head -$(expr $actual_num_backups - $keep_backups)); do 
-            echo -e "\n$(date '+%F %T') ${Blue} Deleting exported attachment:$F"
-            rm -rf $F
-        done
-    fi    
-fi
-
-
-
 echo "$(date '+%F %T') $(date '+%F %T') Starting exporting..."
 echo 
 
@@ -259,17 +229,17 @@ fi
 
 working_folder=$(date '+%Y%m%d%H%M%S')-bw-export
 
-save_folder=$save_folder/$working_folder/
-save_folder_attachments=$save_folder_attachments/$working_folder/
+runtime_save_folder=$save_folder/$working_folder/
+runtime_save_folder_attachments=$save_folder_attachments/$working_folder/
 
-if [[ ! -d "$save_folder" ]]
+if [[ ! -d "$runtime_save_folder" ]]
 then
-    mkdir $save_folder
+    mkdir $runtime_save_folder
 fi
 
-if [[ ! -d "$save_folder_attachments" ]]
+if [[ ! -d "$runtime_save_folder_attachments" ]]
 then
-    mkdir $save_folder_attachments
+    mkdir $runtime_save_folder_attachments
 fi
 
 
@@ -279,11 +249,11 @@ if [[ $password1 == "" ]]
 then
     echo
     echo "$(date '+%F %T') Exporting personal vault to an unencrypted file..."
-    bw export --format json --output $save_folder
+    bw export --format json --output $runtime_save_folder
 else
     echo 
     echo "$(date '+%F %T') Exporting personal vault to a password-encrypted file..."
-    bw export --format encrypted_json --password $password1 --output $save_folder
+    bw export --format encrypted_json --password $password1 --output $runtime_save_folder
 fi
 
 if [[ $organization_list == "" ]]
@@ -309,11 +279,11 @@ then
         then
             echo
             echo "$(date '+%F %T') Exporting organization vault to an unencrypted file..."
-            bw export --organizationid $org_id --format json --output $save_folder
+            bw export --organizationid $org_id --format json --output $runtime_save_folder
         else
             echo 
             echo "$(date '+%F %T') Exporting organization vault to a password-encrypted file..."
-            bw export --organizationid $org_id --format encrypted_json --password $password1 --output $save_folder
+            bw export --organizationid $org_id --format encrypted_json --password $password1 --output $runtime_save_folder
         fi
     done
 else
@@ -328,7 +298,7 @@ if [[ $(bw list items | jq -r '.[] | select(.attachments != null)') != "" ]]
 then
     echo
     echo "$(date '+%F %T') Saving attachments..."
-    bash <(bw list items | jq -r '.[]  | select(.attachments != null) | "bw get attachment \"\(.attachments[].fileName)\" --itemid \(.id) --output \"'$save_folder_attachments'\(.name)/\""' )
+    bash <(bw list items | jq -r '.[]  | select(.attachments != null) | "bw get attachment \"\(.attachments[].fileName)\" --itemid \(.id) --output \"'$runtime_save_folder_attachments'\(.name)/\""' )
 else
     echo
     echo "$(date '+%F %T') No attachments exist, so nothing to export."
@@ -353,5 +323,40 @@ bw logout
 BW_CLIENTID=
 BW_CLIENTSECRET=
 BW_SESSION=
+
+
+if [ -n "${KEEP_LAST_BACKUPS}" ]; then
+    echo "$(date '+%F %T') $(date '+%F %T') Starting cleaning previous backups..."
+    echo 
+    re='^[0-9]+$'
+    if ! [[ ${KEEP_LAST_BACKUPS} =~ $re ]] ; then
+       echo -e "\n$(date '+%F %T') ${IYellow}ERROR: KEEP_LAST_BACKUPS:${KEEP_LAST_BACKUPS} is not a number" >&2; exit 1
+    fi
+    keep_backups="${KEEP_LAST_BACKUPS}"
+    # Deleting vault exportings directories
+    actual_num_backups=$(find $save_folder -path "*-bw-export" -type d | sort | wc -l)
+    echo -e "\n$(date '+%F %T') ${Cyan}Info: Nº backups: $actual_num_backups"
+    echo -e "$(date '+%F %T') ${Cyan}Info: Max Nº backups: $keep_backups"    
+    if [[ $actual_num_backups -gt $keep_backups ]]; then
+        for F in $(find $save_folder -path "*-bw-export" -type d | sort | head -$(expr $actual_num_backups - $keep_backups)); do 
+            echo -e "\n$(date '+%F %T') ${Blue} Deleting exported vault:$F"
+            rm -rf $F
+        done
+    fi
+    # Deleteting attachment exporting directories
+    actual_num_backups=$(find $save_folder_attachments -path "*-bw-export" -type d | sort | wc -l)
+    if [[ $actual_num_backups -gt $keep_backups ]]; then
+        echo -e "\n$(date '+%F %T') ${Cyan}Info: Nº backups: $actual_num_backups"
+        echo -e "$(date '+%F %T') ${Cyan}Info: Max Nº backups: $keep_backups"
+        for F in $(find $save_folder_attachments -path "*-bw-export" -type d | sort | head -$(expr $actual_num_backups - $keep_backups)); do 
+            echo -e "\n$(date '+%F %T') ${Blue} Deleting exported attachment:$F"
+            rm -rf $F
+        done
+    fi
+    echo "$(date '+%F %T') $(date '+%F %T') Finish clean previous backups..."    
+fi
+
+
+
 echo -e "\n$(date '+%F %T') ${IGreen} Info: Exporting finished. Have a good day"
 echo
