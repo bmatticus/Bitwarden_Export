@@ -72,7 +72,10 @@ The following are created by the docker image:
         # - PUID=1000
         # - PGID=1000
         # Optional: Execution logging file. Please check output path is mapping inside a volume
-        # - FILE_LOG=/var/data/bw-export-logfile.log        
+        # - FILE_LOG=/var/data/bw-export-logfile.log
+        # Optional: Keep the maximum number of exports defined. A maximum of X exports will be retained, the oldest exports will be deleted.
+        # - KEEP_LAST_BACKUPS=5
+        
     ```
 
 * Configure each required variable and volumes.
@@ -102,7 +105,7 @@ Please see the following link [Bitwarden_Export Unraid Tempplate Readme](https:/
 
 ---
 
-## PUID and PGID
+## PUID and PGID Variables
 
 Docker runs all of its containers under the `root` user domain because it requires access to things like network configuration, process management, and your filesystem. This means that the processes running inside your containers also run as `root`. This kind of elevated access is not ideal for day-to-day use, and potentially gives applications the access to things they shouldn't \(although, a strong understanding of volume and port mapping will help with this\).
 
@@ -131,6 +134,20 @@ It is most likely that you will use the `id` of yourself, which can be obtained 
 ```shell
 id $user
 ```
+
+## KEEP_LAST_BACKUPS Variable
+
+Keep the maximum number of exports defined. A maximum of X exports will be retained, the oldest exports will be deleted.
+
+```yaml
+environment:
+  - KEEP_LAST_BACKUPS=5
+```
+
+Each export is saved in the output folder with the template `<DateTime>-bw-export`.
+When the variable `KEEP_LAST_BACKUPS` is set, the container will sort the folders and delete the oldest ones while keeping the number of folders indicated by the variable.
+
+![Keep Last Sample](docs/assets/keep-last.png)
 
 # Developers only -  How to build the image
 
